@@ -72,7 +72,7 @@ Currently does not support (because Phinx doesn't either):
 * arbitrary compound partial indices, e.g. `CREATE INDEX idx1 (col1(5),col2(6))`: will fail if encountered (compound indices with just last column partial are OK, as are single partial column indices)
 * display widths, e.g. `int(4)`: they're useless anyway outside SQL developer tools
 
-Currently does not support (and isn't planned to):
+Currently does not support (and won't until there's actual need to):
 * anything other than MySQL sources: this app uses the ANSI "information\_schema" to fetch the database structure (with a few MySQL-specifics like `auto_increment` and `unsigned`), so other database backends supporting information\_schema could probably be added relatively easily
 * sources other than live databases: the code could be extended to parse database dumps (.sql files) directly, but those are vendor-specific and much more difficult to parse reliably. It's straightforward to just import a dump file into a database server and dump that database directly.
 

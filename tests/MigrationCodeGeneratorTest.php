@@ -12,6 +12,7 @@ namespace RN\PhinxDump\Tests;
 use PHPUnit\Framework\TestCase;
 use RN\PhinxDump\MigrationCodeGenerator;
 use RN\PhinxDump\Model;
+use RN\PhinxDump\Logger;
 use RN\PhinxDump\Tests\Stubs\MysqlAdapter;
 use RN\PhinxDump\UnsupportedSchemaException;
 
@@ -27,6 +28,17 @@ class MigrationCodeGeneratorTest extends TestCase
   {
     require_once(__DIR__.'/stubs/MysqlAdapterStub.php');
     require_once(__DIR__.'/stubs/PhinxMigrationStub.php');
+    Logger::$outputEnabled=false;
+  }
+
+
+  /**
+   * Reset code generator defaults
+   */
+  public function setUp()
+  {
+    MigrationCodeGenerator::$allowDoubleFallback=false;
+    MigrationCodeGenerator::$allowEmptyMigration=false;
   }
 
 
@@ -315,9 +327,9 @@ class MigrationCodeGeneratorTest extends TestCase
             ['ts1', NULL,               false,'timestamp',false,['default'=>NULL,               'update'=>NULL]],
             ['ts2', 'CURRENT_TIMESTAMP',false,'timestamp',false,['default'=>'CURRENT_TIMESTAMP','update'=>NULL]],
             ['ts3', NULL,               true, 'timestamp',false,['null'=>true,'default'=>NULL,  'update'=>NULL]],
-            ['ts4', NULL,               false,'timestamp',true ,['default'=>NULL,               'update'=>'CURRENT_TIMESTAMP']],
-            ['ts5', 'CURRENT_TIMESTAMP',false,'timestamp',true ,['default'=>'CURRENT_TIMESTAMP','update'=>'CURRENT_TIMESTAMP']],
-            ['ts6', NULL,               true, 'timestamp',true ,['null'=>true,'default'=>NULL,  'update'=>'CURRENT_TIMESTAMP']],
+            ['ts4', NULL,               false,'timestamp',true, ['default'=>NULL,               'update'=>'CURRENT_TIMESTAMP']],
+            ['ts5', 'CURRENT_TIMESTAMP',false,'timestamp',true, ['default'=>'CURRENT_TIMESTAMP','update'=>'CURRENT_TIMESTAMP']],
+            ['ts6', NULL,               true, 'timestamp',true, ['null'=>true,'default'=>NULL,  'update'=>'CURRENT_TIMESTAMP']],
            ];
 
     foreach($cases as $case)
@@ -423,18 +435,26 @@ class MigrationCodeGeneratorTest extends TestCase
    */
   public function testClassGeneration()
   {
-    //       name,    code blocks,              comment lines
-    $cases=[['empty', [],                       []],
-            ['filled',['//code1xx','//code2xy'],['comment1xz','comment2ya']]];
+    //       name,    code blocks,              comment lines,              allow empty?
+    $cases=[['empty1',[],                       [],                         false],
+            ['empty2',[],                       [],                         true],
+            ['filled',['//code1xx','//code2xy'],['comment1xz','comment2ya'],false]];
     $classname_prefix='TmpMigration'.date('YmdHis').'_';
     foreach($cases as $ti=>$case)
     {
-      list($casename,$code_blocks,$comment_lines)=$case;
+      list($casename,$code_blocks,$comment_lines,$allow_empty)=$case;
+      MigrationCodeGenerator::$allowEmptyMigration=$allow_empty;
       $classname=$classname_prefix.$ti;
       $classname_ns=$classname;
       if(class_exists($classname_ns))
         $this->fail('internal error: class "'.$classname_ns.'" already exists');
       $code=MigrationCodeGenerator::generateClassCode($classname,$code_blocks,$comment_lines);
+      if(!$code_blocks && !$allow_empty)
+      {
+        $this->assertEmpty($code,'migration code should be empty');
+        continue;
+      }
+
       $this->assertStringStartsWith("<?php\n",$code);
       foreach($code_blocks as $block)
         $this->assertContains($block,$code,'testcase '.$casename);

@@ -51,7 +51,8 @@ class Runner extends Model\AbstractModel
     $filename=$this->_startTime->format('YmdHis').'_'.strtolower(implode('_',$name_parts)).'.php';
 
     $file_contents=$this->_assembleClassCode($classname,$code_blocks);
-    $this->_attemptFileWrite($filename,$file_contents);
+    if($file_contents)
+      $this->_attemptFileWrite($filename,$file_contents);
   }
 
 

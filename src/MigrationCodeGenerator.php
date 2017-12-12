@@ -17,7 +17,10 @@ use RN\PhinxDump\Model;
 abstract class MigrationCodeGenerator
 {
   public static $allowDoubleFallback=false;
+  public static $allowEmptyMigration=false;
+
   protected static $_columnTypeMappers=[];
+
 
   protected static function _assembleColumnTypeMappers()
   {
@@ -235,6 +238,21 @@ abstract class MigrationCodeGenerator
    */
   public static function generateClassCode(string $classname, array $code_blocks, array $additional_class_comment_lines=[]): string
   {
+    $logger=Logger::getInstance();
+    if(!$code_blocks)
+    {
+      if(!self::$allowEmptyMigration)
+      {
+        $logger->error('database is empty, didn\'t create a migration class');
+        return '';
+      }
+      else
+      {
+        $logger->warn('database is empty, created migration class anyway');
+        $code_blocks=['//original database was empty'];
+      }
+    }
+
     $template='<?php
 declare(strict_types=1);
 /**
@@ -243,6 +261,7 @@ declare(strict_types=1);
 [[COMMENTS]]
  *
  * Requires PHP version 7.0+
+ * @codingStandardsIgnoreRule RN.Classes.ClassDeclaration
  */
 
 use Phinx\Migration\AbstractMigration;

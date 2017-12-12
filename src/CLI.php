@@ -85,9 +85,11 @@ class CLI
     $allow_double_fallback=$this->_getArgumentOrDefault($args,'--allow-double-fallback','no');
     $allow_double_fallback=$this->_parseBooleanParameter($allow_double_fallback);
 
-    if(count($args)!=1 || !is_bool($allow_double_fallback))
+    $allow_empty_migration=$this->_parseBooleanParameter($this->_getArgumentOrDefault($args,'--allow-empty-migration','no'));
+
+    if(count($args)!=1 || !is_bool($allow_double_fallback) || !is_bool($allow_empty_migration))
     {
-      echo "Syntax: ",$_SERVER['argv'][0]," [-h <hostname>] [-u <username>] [--allow-double-fallback <yes|no>] database\n";
+      echo "Syntax: ",$_SERVER['argv'][0]," [-h <hostname>] [-u <username>] [--allow-double-fallback <yes|no>] [--allow-empty-migration <yes|no>] database\n";
       return 1;
     }
     $database=array_pop($args);
@@ -110,6 +112,7 @@ class CLI
     }
     $runner=new Runner($config,$source);
     MigrationCodeGenerator::$allowDoubleFallback=$allow_double_fallback;
+    MigrationCodeGenerator::$allowEmptyMigration=$allow_empty_migration;
 
     try
     {
