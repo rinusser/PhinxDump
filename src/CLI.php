@@ -87,9 +87,11 @@ class CLI
 
     $allow_empty_migration=$this->_parseBooleanParameter($this->_getArgumentOrDefault($args,'--allow-empty-migration','no'));
 
-    if(count($args)!=1 || !is_bool($allow_double_fallback) || !is_bool($allow_empty_migration))
+    $help_requested=array_intersect($args,['-h','--help','-h','-?']);
+
+    if($help_requested || count($args)!=1 || !is_bool($allow_double_fallback) || !is_bool($allow_empty_migration))
     {
-      echo "Syntax: ",$_SERVER['argv'][0]," [-h <hostname>] [-u <username>] [--allow-double-fallback <yes|no>] [--allow-empty-migration <yes|no>] database\n";
+      $this->_showHelpScreen();
       return 1;
     }
     $database=array_pop($args);
@@ -124,5 +126,14 @@ class CLI
       Logger::getInstance()->error($e->getMessage());
       return 50;
     }
+  }
+
+  protected function _showHelpScreen(): void
+  {
+    echo "Syntax: ",$_SERVER['argv'][0]," [<options>] <database>\n\nOptions:\n".
+      "  -h <hostname>                     The server hostname to connect to\n".
+      "  -u <username>                     The username to connect as\n".
+      "  --allow-double-fallback <yes|no>  Whether it's OK to replace unsupported DOUBLE columns with FLOAT\n".
+      "  --allow-empty-migration <yes|no>  Whether it's OK that schema might be empty\n\n";
   }
 }

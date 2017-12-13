@@ -27,8 +27,7 @@ abstract class MigrationCodeGenerator
     self::$_columnTypeMappers=[];
     self::$_columnTypeMappers[]=[Model\IntegerColumn::class,'integer'];
 
-    self::$_columnTypeMappers[]=[Model\FloatColumn::class,function($column)
-    {
+    self::$_columnTypeMappers[]=[Model\FloatColumn::class,function($column) {
       switch($column->precision)
       {
         case Model\FloatColumn::PRECISION_SINGLE:
@@ -46,23 +45,19 @@ abstract class MigrationCodeGenerator
 
     self::$_columnTypeMappers[]=[Model\DecimalColumn::class,'decimal'];
 
-    self::$_columnTypeMappers[]=[Model\CharColumn::class,function($column)
-    {
+    self::$_columnTypeMappers[]=[Model\CharColumn::class,function($column) {
       return $column->variable?'string':'char';
     }];
 
-    self::$_columnTypeMappers[]=[Model\LOBColumn::class,function($column)
-    {
+    self::$_columnTypeMappers[]=[Model\LOBColumn::class,function($column) {
       return $column->type==Model\LOBColumn::TYPE_TEXT?'text':'blob';
     }];
 
-    self::$_columnTypeMappers[]=[Model\ListColumn::class,function($column)
-    {
+    self::$_columnTypeMappers[]=[Model\ListColumn::class,function($column) {
       return $column->multiple?'set':'enum';
     }];
 
-    self::$_columnTypeMappers[]=[Model\TemporalColumn::class,function($column)
-    {
+    self::$_columnTypeMappers[]=[Model\TemporalColumn::class,function($column) {
       switch($column->type)
       {
         case Model\TemporalColumn::TYPE_DATE:

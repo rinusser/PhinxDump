@@ -41,14 +41,13 @@ You'll still have to check and potentially correct the generated files.
 
 ### Standalone
 
-    php -f src/main.php [-h <host>] [-u <username>] <database>
+    php -f src/main.php <args...>
 
 ### Docker
 
 Change the db/migrations path to whatever suits your needs:
 
-    docker run --rm -u "$UID" -it -v "$PWD/db/migrations:/data" <imagename> -- \
-      [-h <host>] [-u <username>] <database>'
+    docker run --rm -u "$UID" -it -v "$PWD/db/migrations:/data" <imagename> -- <args...>
 
 When accessing databases in docker containers by container names, make sure to run the application in the appropriate
 docker network (`--net <name>`).
@@ -60,7 +59,34 @@ It's recommended to create a shell alias to keep command lines short (assuming i
 
 which can then be invoked easily:
 
-     mysqlphinxdump [-h <host>] [-u <username>] <database>
+     mysqlphinxdump <args...>
+
+### Arguments
+
+Regardless of whether you invoke this application directly with php or as a Docker container, it supports these command
+line arguments (replace "phinxdump" with `php -f src/main.php` or your docker command line or alias):
+
+    phinxdump [<options>] <database>
+
+    Options:
+     -h <hostname>
+     -u <username>
+     --allow-double-fallback <yes|no>
+     --allow-empty-migration <yes|no>
+
+The `-h <hostname>` argument can be used to access a particular database server (just like `mysql -h <hostname>`).
+
+The `-u <username>` argument can be used to change the username to connect as (just like `mysql -u <username>`). By
+default there will be an attempt to use the current user's username, or "root" if it can't be determined.
+
+The `--allow-double-fallback <yes|no>` argument specifies whether it's OK to use `float` for any found `double` columns.
+Phinx currently doesn't support the `double` datatype, in some cases the precision loss might be OK. By default this is
+disabled, i.e. any found `double` columns will log an error and abort the application.
+
+The `--allow-empty-migration <yes|no>` argument specifies whether empty schemas should still create a migration class.
+By default this is disabled, i.e. dumping empty schemas will log an error and will NOT write a migration file.
+
+The `database` argument is mandatory and contains the MySQL database name to dump.
 
 
 # Limitations
