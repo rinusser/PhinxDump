@@ -16,6 +16,9 @@ use RN\PhinxDump\Model;
  */
 abstract class InformationSchemaParser
 {
+  public static $preserveMyISAM=false;
+
+
   protected static function _returnValueByType(array $data, array $types)
   {
     foreach($types as $type=>$value)
@@ -198,6 +201,14 @@ abstract class InformationSchemaParser
       unset($indices['PRIMARY']);
     }
     $table->indices=$indices;
+    $engine=$table_data['engine'];
+    if(!self::$preserveMyISAM && $engine!==NULL && strtolower($engine)==='myisam')
+    {
+      Logger::getInstance()->warn('found MyISAM table, will be created with target server\'s default storage engine');
+      $table->codeComment='was MyISAM in original table';
+      $engine=NULL;
+    }
+    $table->engine=$engine;
     $table->comment=$table_data['table_comment'];
     return $table;
   }

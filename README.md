@@ -73,6 +73,7 @@ line arguments (replace "phinxdump" with `php -f src/main.php` or your docker co
      -u <username>
      --allow-double-fallback <yes|no>
      --allow-empty-migration <yes|no>
+     --preserve-myisam <yes|no>
 
 The `-h <hostname>` argument can be used to access a particular database server (just like `mysql -h <hostname>`).
 
@@ -85,6 +86,10 @@ disabled, i.e. any found `double` columns will log an error and abort the applic
 
 The `--allow-empty-migration <yes|no>` argument specifies whether empty schemas should still create a migration class.
 By default this is disabled, i.e. dumping empty schemas will log an error and will NOT write a migration file.
+
+The `--preserve-myisam <yes|no>` argument specifies whether any found MyISAM storage engine use should be kept in the
+generated migration class. By default this is disabled, i.e. tables with the MyISAM storage engine don't get an explicit
+storage engine set in the migration code, so Phinx/MySQL will use the database server's default (usually InnoDB).
 
 The `database` argument is mandatory and contains the MySQL database name to dump.
 

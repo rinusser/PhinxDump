@@ -35,9 +35,9 @@ class InformationSchemaParserTest extends TestCase
     $this->assertSame($comment,$obj->comment,'table comment');
   }
 
-  protected function _parse(string $table, array $data, array $index_data=[], ?string $comment=NULL)
+  protected function _parse(string $table, array $data, array $index_data=[], ?string $engine=NULL, ?string $comment=NULL)
   {
-    return InformationSchemaParser::parse(['table_name'=>$table,'table_comment'=>$comment],$data,$index_data);
+    return InformationSchemaParser::parse(['table_name'=>$table,'table_comment'=>$comment,'engine'=>$engine],$data,$index_data);
   }
 
   protected function _nullStringIfNULL($value): string
@@ -71,7 +71,7 @@ class InformationSchemaParserTest extends TestCase
   public function testEmptyTable()
   {
     $this->_assertIsTable($this->_parse('asdf',[]),'asdf',0);
-    $this->_assertIsTable($this->_parse('asdf',[],[],'tbl cmt'),'asdf',0,'tbl cmt');
+    $this->_assertIsTable($this->_parse('asdf',[],[],'tbl cmt'),'asdf',0,NULL,'tbl cmt');
   }
 
 

@@ -87,6 +87,8 @@ class CLI
 
     $allow_empty_migration=$this->_parseBooleanParameter($this->_getArgumentOrDefault($args,'--allow-empty-migration','no'));
 
+    $preserve_myisam=$this->_parseBooleanParameter($this->_getArgumentOrDefault($args,'--preserve-myisam','no'));
+
     $help_requested=array_intersect($args,['-h','--help','-h','-?']);
 
     if($help_requested || count($args)!=1 || !is_bool($allow_double_fallback) || !is_bool($allow_empty_migration))
@@ -115,6 +117,7 @@ class CLI
     $runner=new Runner($config,$source);
     MigrationCodeGenerator::$allowDoubleFallback=$allow_double_fallback;
     MigrationCodeGenerator::$allowEmptyMigration=$allow_empty_migration;
+    InformationSchemaParser::$preserveMyISAM=$preserve_myisam;
 
     try
     {
@@ -134,6 +137,7 @@ class CLI
       "  -h <hostname>                     The server hostname to connect to\n".
       "  -u <username>                     The username to connect as\n".
       "  --allow-double-fallback <yes|no>  Whether it's OK to replace unsupported DOUBLE columns with FLOAT\n".
-      "  --allow-empty-migration <yes|no>  Whether it's OK that schema might be empty\n\n";
+      "  --allow-empty-migration <yes|no>  Whether it's OK that schema might be empty\n".
+      "  --preserve-myisam <yes|no>        Whether MyISAM storage engine should be preserved explictly\n\n";
   }
 }

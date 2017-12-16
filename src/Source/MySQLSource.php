@@ -41,7 +41,7 @@ class MySQLSource extends AbstractSource
    */
   public function fetchTableData(): array
   {
-    return $this->_pdo->query('SELECT table_name,table_type,table_comment
+    return $this->_pdo->query('SELECT table_name,table_type,engine,table_comment
                                FROM information_schema.tables
                                WHERE table_schema='.$this->_pdo->quote($this->_config->database))->fetchAll(PDO::FETCH_ASSOC);
   }

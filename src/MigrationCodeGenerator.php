@@ -214,7 +214,10 @@ abstract class MigrationCodeGenerator
       $options['primary_key']=self::_generateArray($table->primaryKey->columns);
     if($table->comment)
       $options['comment']=trim(var_export($table->comment,true));
-    $rvs=['$this->table(\''.$table->name."',".self::_generateArray($options,true,false).')'];
+    if($table->engine)
+      $options['engine']=var_export($table->engine,true);
+    $code_comment=$table->codeComment?' //'.str_replace(["\r","\n"],' ',$table->codeComment):'';
+    $rvs=['$this->table(\''.$table->name."',".self::_generateArray($options,true,false).')'.$code_comment];
     foreach($table->columns as $column)
       $rvs[]=self::generateAddColumnCode($column);
     foreach($table->indices as $index)

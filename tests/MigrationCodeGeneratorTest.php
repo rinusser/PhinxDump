@@ -94,9 +94,37 @@ class MigrationCodeGeneratorTest extends TestCase
    */
   public function testTableComment()
   {
-    $table=new Model\Table('cmt',[],NULL,[],'my comment');
+    $table=new Model\Table('cmt',[],NULL,[],NULL,'my comment');
     $code=MigrationCodeGenerator::generateTableCode($table);
     $this->_assertTrimmedRowAtOffsetIs(0,"\$this->table('cmt',['id'=>false,'comment'=>'my comment'])",$code);
+  }
+
+  /**
+   * Make sure table code comments are generated
+   */
+  public function testTableCodeComment()
+  {
+    $table=new Model\Table('codecomment',[]);
+    $comment='some comment';
+    $code=MigrationCodeGenerator::generateTableCode($table);
+    $this->assertNotContains($comment,$code);
+    $table->codeComment=$comment;
+    $code=MigrationCodeGenerator::generateTableCode($table);
+    $lines=explode("\n",$code);
+    $this->assertTrue((bool)preg_match('#//'.$comment.'$#',$lines[0]),'code comment should be at end of first line');
+  }
+
+  /**
+   * Make sure a table's explicit storage engine is included in generated code
+   */
+  public function testTableEngine()
+  {
+    foreach(['CSV','InnoDB','MyISAM'] as $engine)
+    {
+      $table=new Model\Table('eng',[],NULL,[],$engine);
+      $code=MigrationCodeGenerator::generateTableCode($table);
+      $this->_assertTrimmedRowAtOffsetIs(0,"\$this->table('eng',['id'=>false,'engine'=>'$engine'])",$code);
+    }
   }
 
   protected function _silentEval($code)
