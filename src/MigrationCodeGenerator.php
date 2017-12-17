@@ -11,172 +11,17 @@ declare(strict_types=1);
 namespace RN\PhinxDump;
 
 use RN\PhinxDump\Model;
+use RN\PhinxDump\CodeGenerator\AbstractCodeGenerator;
+use RN\PhinxDump\CodeGenerator\ColumnCodeGenerator;
 
 /**
  * This class takes various models and turns them into parts of migration classes.
+ * Columns are handled in ColumnCodeGenerator.
  */
-abstract class MigrationCodeGenerator
+abstract class MigrationCodeGenerator extends AbstractCodeGenerator
 {
-  public static $allowDoubleFallback=false;
   public static $allowEmptyMigration=false;
 
-  protected static $_columnTypeMappers=[];
-
-
-  protected static function _assembleColumnTypeMappers()
-  {
-    self::$_columnTypeMappers=[];
-    self::$_columnTypeMappers[]=[Model\IntegerColumn::class,'integer'];
-
-    self::$_columnTypeMappers[]=[Model\FloatColumn::class,function($column) {
-      switch($column->precision)
-      {
-        case Model\FloatColumn::PRECISION_SINGLE:
-          return 'float';
-        case Model\FloatColumn::PRECISION_DOUBLE:
-          if(!self::$allowDoubleFallback)
-            throw new UnsupportedSchemaException('double precision floats currently (as of 0.8.1) not implemented in Phinx');
-          $column->codeComment='XXX was MySQL type DOUBLE, falled back to single precision';
-          Logger::getInstance()->warn("column '$column->name' was type DOUBLE but Phinx doesn't support that, used FLOAT instead");
-          return 'float';
-        default:
-          throw new \LogicException('unhandled precision "'.$column->precision.'"');
-      }
-    }];
-
-    self::$_columnTypeMappers[]=[Model\DecimalColumn::class,'decimal'];
-
-    self::$_columnTypeMappers[]=[Model\CharColumn::class,function($column) {
-      return $column->variable?'string':'char';
-    }];
-
-    self::$_columnTypeMappers[]=[Model\LOBColumn::class,function($column) {
-      return $column->type==Model\LOBColumn::TYPE_TEXT?'text':'blob';
-    }];
-
-    self::$_columnTypeMappers[]=[Model\ListColumn::class,function($column) {
-      return $column->multiple?'set':'enum';
-    }];
-
-    self::$_columnTypeMappers[]=[Model\TemporalColumn::class,function($column) {
-      switch($column->type)
-      {
-        case Model\TemporalColumn::TYPE_DATE:
-          return 'date';
-        case Model\TemporalColumn::TYPE_TIME:
-          return 'time';
-        case Model\TemporalColumn::TYPE_DATETIME:
-          return 'datetime';
-        case Model\TemporalColumn::TYPE_TIMESTAMP:
-          return 'timestamp';
-        default:
-          throw new \LogicException('no known Phinx type for temporal column type "'.$column->type.'"');
-      }
-    }];
-  }
-
-  protected static function _getPhinxColumnType(Model\AbstractColumn $column): string
-  {
-    foreach(self::$_columnTypeMappers as list($class,$mapper))
-      if($column instanceof $class)
-        return is_callable($mapper)?$mapper($column):$mapper;
-
-    throw new UnsupportedSchemaException('no known Phinx type for column type "'.get_class($column).'"');
-  }
-
-  protected static function _findValueByKey(string $key, array $values): string
-  {
-    foreach($values as $tk=>$tv)
-      if($tk==$key)
-        return $tv;
-    throw new \LogicException('no value found for key "'.$key.'"');
-  }
-
-  protected static function _getMySQLLOBLimit(Model\LOBColumn $column): string
-  {
-    $sizes=[Model\LOBColumn::SIZE_TINY=>'TINY',
-            Model\LOBColumn::SIZE_REGULAR=>'REGULAR',
-            Model\LOBColumn::SIZE_MEDIUM=>'MEDIUM',
-            Model\LOBColumn::SIZE_LONG=>'LONG'];
-    return 'MysqlAdapter::'.($column->type==Model\LOBColumn::TYPE_TEXT?'TEXT':'BLOB').'_'.self::_findValueByKey($column->size,$sizes);
-  }
-
-  protected static function _getMySQLIntegerLimit(Model\IntegerColumn $column): string
-  {
-    $sizes=[Model\IntegerColumn::SIZE_TINY=>'TINY',
-            Model\IntegerColumn::SIZE_SMALL=>'SMALL',
-            Model\IntegerColumn::SIZE_MEDIUM=>'MEDIUM',
-            Model\IntegerColumn::SIZE_REGULAR=>'REGULAR',
-            Model\IntegerColumn::SIZE_BIG=>'BIG'];
-    return 'MysqlAdapter::INT_'.self::_findValueByKey($column->size,$sizes);
-  }
-
-  protected static function _getPhinxColumnOptions(Model\AbstractColumn $column): array
-  {
-    $rv=[];
-    if($column->nullable)
-      $rv['null']='true';
-    if($column->comment!=NULL)
-      $rv['comment']=trim(var_export($column->comment,true));
-
-    if($column instanceof Model\CharColumn)
-      $rv['limit']=$column->length;
-    elseif($column instanceof Model\LOBColumn)
-      $rv['limit']=self::_getMySQLLOBLimit($column);
-    elseif($column instanceof Model\IntegerColumn)
-    {
-      $rv['limit']=self::_getMySQLIntegerLimit($column);
-      if($column->unsigned)
-        $rv['signed']='false';
-      if($column->autoIncrement)
-        $rv['identity']='true';
-    }
-    elseif($column instanceof Model\ListColumn)
-      $rv['values']=self::_generateArray($column->values,false);
-    elseif($column instanceof Model\DecimalColumn)
-    {
-      $rv['precision']=$column->precision;
-      $rv['scale']=$column->scale;
-      if($column->unsigned)
-        $rv['signed']='false';
-    }
-    elseif($column instanceof Model\TemporalColumn && $column->type===Model\TemporalColumn::TYPE_TIMESTAMP)
-      $rv['update']=$column->onUpdateCurrentTimestamp?'"CURRENT_TIMESTAMP"':'NULL';
-
-    if($column->default!==NULL || $column instanceof Model\TemporalColumn && $column->type===Model\TemporalColumn::TYPE_TIMESTAMP)
-      $rv['default']=trim(var_export($column->default,true));
-
-    return $rv;
-  }
-
-  protected static function _generateArray(array $array, bool $with_keys=false, bool $escape_values=true): string
-  {
-    $rvs=[];
-    foreach($array as $tk=>$tv)
-    {
-      $entry=$with_keys?trim(var_export($tk,true)).'=>':'';
-      $entry.=$escape_values?trim(var_export($tv,true)):$tv;
-      $rvs[]=$entry;
-    }
-    return '['.implode(',',$rvs).']';
-  }
-
-  /**
-   * Turns a column model into a Phinx ->addColumn() function call
-   *
-   * @param AbstractColumn $column the column to generate code for
-   * @return string the generated function call code
-   */
-  public static function generateAddColumnCode(Model\AbstractColumn $column): string
-  {
-    $name=$column->name;
-    $type=self::_getPhinxColumnType($column);
-    $options=self::_getPhinxColumnOptions($column);
-    $code="->addColumn('".$name."','".$type."'".($options?','.self::_generateArray($options,true,false):'').")";
-    if($column->codeComment!==NULL)
-      $code.=' //'.$column->codeComment;
-    return $code;
-  }
 
   /**
    * Turns an index model into a Phinx ->addIndex() function call
@@ -209,7 +54,6 @@ abstract class MigrationCodeGenerator
    */
   public static function generateTableCode(Model\Table $table, string $indent='    '): string
   {
-    self::_assembleColumnTypeMappers();
     $options=['id'=>'false'];
     if($table->primaryKey)
       $options['primary_key']=self::_generateArray($table->primaryKey->columns);
@@ -220,7 +64,7 @@ abstract class MigrationCodeGenerator
     $code_comment=$table->codeComment?' //'.str_replace(["\r","\n"],' ',$table->codeComment):'';
     $rvs=['$this->table(\''.$table->name."',".self::_generateArray($options,true,false).')'.$code_comment];
     foreach($table->columns as $column)
-      $rvs[]=self::generateAddColumnCode($column);
+      $rvs[]=ColumnCodeGenerator::generateAddColumnCode($column);
     foreach($table->indices as $index)
       $rvs[]=self::generateAddIndexCode($index);
     $rvs[]='->create();';

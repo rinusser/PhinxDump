@@ -10,6 +10,8 @@ declare(strict_types=1);
 
 namespace RN\PhinxDump;
 
+use RN\PhinxDump\CodeGenerator\Column\FloatCodeGenerator;
+
 /**
  * Command-line interface to application.
  * Turns command line arguments into internal configuration and starts runner.
@@ -116,7 +118,7 @@ class CLI
       return 2;
     }
     $runner=new Runner($config,$source);
-    MigrationCodeGenerator::$allowDoubleFallback=$allow_double_fallback;
+    FloatCodeGenerator::$allowDoubleFallback=$allow_double_fallback;
     MigrationCodeGenerator::$allowEmptyMigration=$allow_empty_migration;
     InformationSchemaParser::$preserveMyISAM=$preserve_myisam;
 
