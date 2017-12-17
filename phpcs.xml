@@ -5,11 +5,17 @@
   <rule ref="RN"/>
   <rule ref="RN.Commenting.ConfigurableFileComment">
     <properties>
-      <property name="requiredTags" value="author,license,copyright"/>
+      <property name="requiredTags" value="author,license,copyright,link"/>
       <property name="requireAuthorEmail" value="no"/>
       <property name="authorContent" value="Richard Nusser"/>
       <property name="copyrightContent" value="2017 Richard Nusser"/>
       <property name="licenseContent" value="GPLv3 (see http://www.gnu.org/licenses/)"/>
+      <property name="linkContent" value="https://github.com/rinusser/PhinxDump"/>
+    </properties>
+  </rule>
+  <rule ref="RN.CodeAnalysis.MaximumPHPVersion">
+    <properties>
+      <property name="maximumVersion" value="7.1"/>
     </properties>
   </rule>
 </ruleset>

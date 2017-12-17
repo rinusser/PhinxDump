@@ -3,6 +3,7 @@
 Creates Phinx database migration classes from live MySQL databases. Can be used either with a local PHP installation or
 as a CLI-based Docker application.
 
+The sources are hosted on [GitHub](https://github.com/rinusser/PhinxDump).
 
 # Requirements
 
