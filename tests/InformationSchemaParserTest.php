@@ -36,9 +36,9 @@ class InformationSchemaParserTest extends TestCase
     $this->assertSame($comment,$obj->comment,'table comment');
   }
 
-  protected function _parse(string $table, array $data, array $index_data=[], ?string $engine=NULL, ?string $comment=NULL)
+  protected function _parse(string $table, array $data, array $index_data=[], ?string $engine=NULL, ?string $collation=NULL, ?string $comment=NULL)
   {
-    return InformationSchemaParser::parse(['table_name'=>$table,'table_comment'=>$comment,'engine'=>$engine],$data,$index_data);
+    return InformationSchemaParser::parse(['table_name'=>$table,'table_comment'=>$comment,'engine'=>$engine,'table_collation'=>$collation],$data,$index_data);
   }
 
   protected function _nullStringIfNULL($value): string
@@ -46,8 +46,8 @@ class InformationSchemaParserTest extends TestCase
     return $value===NULL?'NULL':(string)$value;
   }
 
-  protected function _assembleDataRow(string $name, $default, bool $nullable, string $data_type,
-                                      ?int $char_len, ?int $precision, ?int $scale, string $column_type, $extra=NULL): array
+  protected function _assembleDataRow(string $name, $default, bool $nullable, string $data_type, ?int $char_len, ?int $precision, ?int $scale,
+                                      string $column_type, $extra=NULL, ?string $encoding=NULL, ?string $collation=NULL): array
   {
     //COLUMN_NAME    | COLUMN_DEFAULT | IS_NULLABLE | DATA_TYPE  | CHARACTER_MAXIMUM_LENGTH | NUMERIC_PRECISION | NUMERIC_SCALE | COLUMN_TYPE | EXTRA
     //---------------+----------------+-------------+------------+--------------------------+-------------------+---------------+-------------+---------------
@@ -61,6 +61,8 @@ class InformationSchemaParserTest extends TestCase
             'numeric_precision'=>$this->_nullStringIfNULL($precision),
             'numeric_scale'=>$this->_nullStringIfNULL($scale),
             'column_type'=>$column_type,
+            'character_set_name'=>$this->_nullStringIfNULL($encoding),
+            'collation_name'=>$this->_nullStringIfNULL($collation),
             'extra'=>$extra];
   }
 
@@ -72,7 +74,12 @@ class InformationSchemaParserTest extends TestCase
   public function testEmptyTable()
   {
     $this->_assertIsTable($this->_parse('asdf',[]),'asdf',0);
-    $this->_assertIsTable($this->_parse('asdf',[],[],'tbl cmt'),'asdf',0,NULL,'tbl cmt');
+    $this->_assertIsTable($this->_parse('asdf',[],[],NULL,'tbl cmt'),'asdf',0,NULL,'tbl cmt');
+
+    $table=$this->_parse('SomeName',[],[],'SomeEngine','SomeCollation');
+    $this->_assertIsTable($table,'SomeName',0);
+    $this->assertEquals('SomeEngine',$table->engine);
+    $this->assertEquals('SomeCollation',$table->collation);
   }
 
 
@@ -173,11 +180,13 @@ class InformationSchemaParserTest extends TestCase
   }
 
 
-  protected function _assertIsCharColumn($obj, string $name, $default, bool $nullable, bool $variable, int $length)
+  protected function _assertIsCharColumn($obj, string $name, $default, bool $nullable, bool $variable, int $length, ?string $encoding, ?string $collation)
   {
     $this->_assertIsColumn($obj,Model\CharColumn::class,$name,$default,$nullable);
     $this->assertEquals($variable,$obj->variable,'column variable length');
     $this->assertEquals($length,$obj->length,'column length');
+    $this->assertEquals($encoding,$obj->encoding,'column encoding');
+    $this->assertEquals($collation,$obj->collation,'column collation');
   }
 
   /**
@@ -185,17 +194,17 @@ class InformationSchemaParserTest extends TestCase
    */
   public function testChars()
   {
-    //                              name,          def, null, type,      len, prec,scal,type
-    $data=[$this->_assembleDataRow('fixed',       'en',false,'char',    2,   NULL,NULL,'char(2)'),
-           $this->_assembleDataRow('variable',    NULL,true, 'varchar', 300, NULL,NULL,'varchar(300)')];
+    //                              name,     def, null, type,      len, prec,scal,type,         extr,enc, coll
+    $data=[$this->_assembleDataRow('fixed',   'en',false,'char',    2,   NULL,NULL,'char(2)',     NULL),
+           $this->_assembleDataRow('variable',NULL,true, 'varchar', 300, NULL,NULL,'varchar(300)',NULL,'ee','cc')];
 
     $table=$this->_parse('chars',$data);
     $this->_assertIsTable($table,'chars',2);
     $cols=$table->columns;
 
-    //                         obj,     name,      def, null, var,  length
-    $this->_assertIsCharColumn($cols[0],'fixed',   'en',false,false,2);
-    $this->_assertIsCharColumn($cols[1],'variable',NULL,true, true, 300);
+    //                         obj,     name,      def, null, var,  len,enc, coll
+    $this->_assertIsCharColumn($cols[0],'fixed',   'en',false,false,2,  NULL,NULL);
+    $this->_assertIsCharColumn($cols[1],'variable',NULL,true, true, 300,'ee','cc');
   }
 
 
@@ -235,6 +244,18 @@ class InformationSchemaParserTest extends TestCase
     $this->_assertIsLOBColumn($cols[5],'blb',  true, Model\LOBColumn::TYPE_BLOB,Model\LOBColumn::SIZE_REGULAR);
     $this->_assertIsLOBColumn($cols[6],'medb', false,Model\LOBColumn::TYPE_BLOB,Model\LOBColumn::SIZE_MEDIUM);
     $this->_assertIsLOBColumn($cols[7],'longb',true, Model\LOBColumn::TYPE_BLOB,Model\LOBColumn::SIZE_LONG);
+  }
+
+  /**
+   * Test parsing TEXT columns with encoding
+   */
+  public function testLOBEncoding()
+  {
+    //                                                  nam,def, null, type,  len,  prec,scal,type,  extr,enc,coll
+    $table=$this->_parse('enc',[$this->_assembleDataRow('a',NULL,false,'text',65535,NULL,NULL,'text',NULL,'e','c')]);
+    $this->_assertIsTable($table,'enc',1);
+    $this->assertEquals('e',$table->columns[0]->encoding, 'TEXT column encoding');
+    $this->assertEquals('c',$table->columns[0]->collation,'TEXT column collation');
   }
 
 

@@ -14,7 +14,7 @@ use RN\PhinxDump\Model;
 use RN\PhinxDump\UnsupportedSchemaException;
 
 /**
- * This class takes various models and turns them into parts of migration classes.
+ * This class takes column models and turns them into parts of migration code.
  */
 abstract class ColumnCodeGenerator extends AbstractCodeGenerator
 {

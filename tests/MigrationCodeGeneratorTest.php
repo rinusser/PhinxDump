@@ -64,7 +64,7 @@ class MigrationCodeGeneratorTest extends CodeGeneratorTestCase
    */
   public function testTableComment()
   {
-    $table=new Model\Table('cmt',[],NULL,[],NULL,'my comment');
+    $table=new Model\Table('cmt',[],NULL,[],NULL,NULL,'my comment');
     $code=MigrationCodeGenerator::generateTableCode($table);
     $this->_assertTrimmedRowAtOffsetIs(0,"\$this->table('cmt',['id'=>false,'comment'=>'my comment'])",$code);
   }
@@ -97,6 +97,18 @@ class MigrationCodeGeneratorTest extends CodeGeneratorTestCase
     }
   }
 
+  /**
+   * Make sure a table's explicit collation is included in generated code
+   */
+  public function testTableCollation()
+  {
+    foreach(['utf8_unicode_ci','latin1_general_cs'] as $collation)
+    {
+      $table=new Model\Table('coll',[],NULL,[],NULL,$collation);
+      $code=MigrationCodeGenerator::generateTableCode($table);
+      $this->_assertTrimmedRowAtOffsetIs(0,"\$this->table('coll',['id'=>false,'collation'=>'$collation'])",$code);
+    }
+  }
 
   protected function _runAddIndexTest(Model\Index $index, string $expected_name, bool $expected_unique, array $expected_columns, $expected_limit='')
   {
@@ -147,7 +159,7 @@ class MigrationCodeGeneratorTest extends CodeGeneratorTestCase
       $index=new Model\Index($name,$unique,$columns,$subparts);
       try
       {
-        $code=MigrationCodeGenerator::generateAddIndexCode($index);
+        MigrationCodeGenerator::generateAddIndexCode($index);
         $this->fail('should have failed ('.$reason.')');
       }
       catch(UnsupportedSchemaException $e)

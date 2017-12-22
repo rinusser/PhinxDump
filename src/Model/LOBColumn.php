@@ -26,21 +26,29 @@ class LOBColumn extends AbstractColumn
 
   protected $_type;
   protected $_size;
+  protected $_encoding;
+  protected $_collation;
 
 
   /**
    * Model constructor
    *
-   * @param string      $name     see parent
-   * @param string|NULL $default  see parent
-   * @param bool        $nullable see parent
-   * @param string      $type     one of this class's TYPE_* constants indicating whether this column contains BLOB or CLOB (=TEXT in MySQL) data
-   * @param string      $size     one of this class's SIZE_* constants indicating the storage size
+   * @param string      $name      see parent
+   * @param string|NULL $default   see parent
+   * @param bool        $nullable  see parent
+   * @param string      $type      one of this class's TYPE_* constants indicating whether this column contains BLOB or CLOB (=TEXT in MySQL) data
+   * @param string      $size      one of this class's SIZE_* constants indicating the storage size
+   * @param string|NULL $encoding  the column's encoding, or NULL to default to the table's - only valid for TYPE_TEXT
+   * @param string|NULL $collation the column's collation, or NULL to default to the table's - only valid for TYPE_TEXT
    */
-  public function __construct(string $name, ?string $default, bool $nullable, string $type, string $size)
+  public function __construct(string $name, ?string $default, bool $nullable, string $type, string $size, ?string $encoding=NULL, ?string $collation=NULL)
   {
     parent::__construct($name,$default,$nullable);
     $this->_type=$type;
     $this->_size=$size;
+    if($type!==self::TYPE_TEXT && ($encoding!==NULL||$collation!==NULL))
+      throw new \InvalidArgumentException('encoding/collation only supported for text columns');
+    $this->_encoding=$encoding;
+    $this->_collation=$collation;
   }
 }

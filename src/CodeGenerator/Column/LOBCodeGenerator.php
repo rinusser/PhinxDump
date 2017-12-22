@@ -48,6 +48,10 @@ class LOBCodeGenerator extends AbstractColumnCodeGenerator
   public function updatePhinxOptions(Model\AbstractColumn $column, array &$options): void
   {
     $options['limit']=$this->_getMySQLLOBLimit($column);
+    if($column->encoding)
+      $options['encoding']=var_export($column->encoding,true);
+    if($column->collation)
+      $options['collation']=var_export($column->collation,true);
   }
 
 

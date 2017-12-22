@@ -3,7 +3,7 @@
   <file>src</file>
   <file>tests</file>
   <rule ref="RN"/>
-  <rule ref="RN.Commenting.ConfigurableFileComment">
+  <rule ref="RN.Commenting.FileComment">
     <properties>
       <property name="requiredTags" value="author,license,copyright,link"/>
       <property name="requireAuthorEmail" value="no"/>

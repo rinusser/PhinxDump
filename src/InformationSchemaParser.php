@@ -121,6 +121,8 @@ abstract class InformationSchemaParser
     $default=$data['column_default']!=='NULL'?$data['column_default']:NULL;
     $nullable=$data['is_nullable']==='YES';
     $unsigned=stripos($data['column_type'],' unsigned')!==false;
+    $encoding=$data['character_set_name']!=='NULL'?$data['character_set_name']:NULL;
+    $collation=$data['collation_name']!=='NULL'?$data['collation_name']:NULL;
 
     $int_size=self::_findIntegerSize($data);
     if($int_size)
@@ -139,11 +141,11 @@ abstract class InformationSchemaParser
 
     $char_type=self::_findCharType($data);
     if($char_type!==NULL)
-      return new Model\CharColumn($name,$default,$nullable,$char_type,(int)$data['character_maximum_length']);
+      return new Model\CharColumn($name,$default,$nullable,$char_type,(int)$data['character_maximum_length'],$encoding,$collation);
 
     list($lob_type,$lob_size)=self::_findLOBTypeAndSize($data);
     if($lob_type!==NULL)
-      return new Model\LOBColumn($name,$default,$nullable,$lob_type,$lob_size);
+      return new Model\LOBColumn($name,$default,$nullable,$lob_type,$lob_size,$encoding,$collation);
 
     $list_type=self::_findListType($data);
     if($list_type!==NULL)
@@ -210,6 +212,7 @@ abstract class InformationSchemaParser
       $engine=NULL;
     }
     $table->engine=$engine;
+    $table->collation=$table_data['table_collation'];
     $table->comment=$table_data['table_comment'];
     return $table;
   }

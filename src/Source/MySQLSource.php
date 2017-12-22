@@ -42,7 +42,7 @@ class MySQLSource extends AbstractSource
    */
   public function fetchTableData(): array
   {
-    return $this->_pdo->query('SELECT table_name,table_type,engine,table_comment
+    return $this->_pdo->query('SELECT table_name,table_type,engine,table_collation,table_comment
                                FROM information_schema.tables
                                WHERE table_schema='.$this->_pdo->quote($this->_config->database))->fetchAll(PDO::FETCH_ASSOC);
   }
@@ -56,7 +56,7 @@ class MySQLSource extends AbstractSource
   public function fetchColumnDataForTable(string $table): array
   {
     return $this->_pdo->query('SELECT column_name,column_default,is_nullable,data_type,character_maximum_length,numeric_precision,
-                                      numeric_scale,column_type,extra
+                                      numeric_scale,column_type,extra,character_set_name,collation_name
                                FROM information_schema.columns
                                WHERE table_schema='.$this->_pdo->quote($this->_config->database).' AND table_name='.$this->_pdo->quote($table).'
                                ORDER BY ordinal_position')->fetchAll(PDO::FETCH_ASSOC);

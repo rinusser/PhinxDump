@@ -61,6 +61,8 @@ abstract class MigrationCodeGenerator extends AbstractCodeGenerator
       $options['comment']=trim(var_export($table->comment,true));
     if($table->engine)
       $options['engine']=var_export($table->engine,true);
+    if($table->collation)
+      $options['collation']=var_export($table->collation,true);
     $code_comment=$table->codeComment?' //'.str_replace(["\r","\n"],' ',$table->codeComment):'';
     $rvs=['$this->table(\''.$table->name."',".self::_generateArray($options,true,false).')'.$code_comment];
     foreach($table->columns as $column)

@@ -155,6 +155,15 @@ class ColumnCodeGeneratorTest extends CodeGeneratorTestCase
     }
   }
 
+  /**
+   * Make sure generated character column code includes encoding and collation if set
+   */
+  public function testAddCharColumnWithEncoding()
+  {
+    $column=new Model\CharColumn('c4',NULL,false,true,100,'enc','coll');
+    $this->_runAddCharColumnTest($column,'c4',true,['limit'=>100,'encoding'=>'enc','collation'=>'coll']);
+  }
+
 
   protected function _removeDefaultLimitFromOptions(array &$options, $limit)
   {
@@ -201,6 +210,14 @@ class ColumnCodeGeneratorTest extends CodeGeneratorTestCase
     }
   }
 
+  /**
+   * Make sure generated text column code includes encoding and collation if set
+   */
+  public function testAddLOBColumnWithEncoding()
+  {
+    $column=new Model\LOBColumn('lob9',NULL,false,Model\LOBColumn::TYPE_TEXT,Model\LOBColumn::SIZE_REGULAR,'enc','coll');
+    $this->_runAddLOBColumnTest($column,'lob9',Model\LOBColumn::TYPE_TEXT,['encoding'=>'enc','collation'=>'coll']);
+  }
 
   protected function _runAddListColumnTest(Model\ListColumn $column, string $expected_name, bool $multiple, array $values, $expected_options)
   {
