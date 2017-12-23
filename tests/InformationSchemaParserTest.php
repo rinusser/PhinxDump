@@ -341,6 +341,48 @@ class InformationSchemaParserTest extends TestCase
   }
 
 
+  /**
+   * Test model optimizer: should remove redundant encodings/collations
+   */
+  public function testReduncancyRemoval()
+  {
+    //                             name,       def, null, type,     len,prec,scal,type,          extr,enc, coll
+    $data=[$this->_assembleDataRow('char_both',NULL,false,'varchar',300,NULL,NULL,'varchar(300)',NULL,'ee','ee_cc'),
+           $this->_assembleDataRow('char_coll',NULL,false,'varchar',300,NULL,NULL,'varchar(300)',NULL,NULL,'ee_cc'),
+           $this->_assembleDataRow('char_enc', NULL,false,'varchar',300,NULL,NULL,'varchar(300)',NULL,'ee',NULL),
+           $this->_assembleDataRow('char_none',NULL,false,'varchar',300,NULL,NULL,'varchar(300)',NULL,NULL,NULL),
+           $this->_assembleDataRow('char_oenc',NULL,false,'varchar',300,NULL,NULL,'varchar(300)',NULL,'a', NULL),
+           $this->_assembleDataRow('char_ocol',NULL,false,'varchar',300,NULL,NULL,'varchar(300)',NULL,NULL,'ee_c2'),
+           $this->_assembleDataRow('text_enc', NULL,false,'text',   256,NULL,NULL,'tinytext',    NULL,'ee',NULL),
+           $this->_assembleDataRow('text_none',NULL,false,'text',   256,NULL,NULL,'tinytext',    NULL,NULL,NULL),
+           $this->_assembleDataRow('text_oenc',NULL,false,'text',   256,NULL,NULL,'tinytext',    NULL,'b', NULL)];
+    $table=$this->_parse('red',$data,[],NULL,'ee_cc');
+
+    $this->_assertIsTable($table,'red',9);
+    $this->assertSame('ee_cc',$table->collation);
+    $cols=$table->columns;
+    $this->_assertStringyColumn($cols[0],NULL,NULL);
+    $this->_assertStringyColumn($cols[1],NULL,NULL);
+    $this->_assertStringyColumn($cols[2],NULL,NULL);
+    $this->_assertStringyColumn($cols[3],NULL,NULL);
+    $this->_assertStringyColumn($cols[4],'a', NULL);
+    $this->_assertStringyColumn($cols[5],NULL,'ee_c2');
+    $this->_assertStringyColumn($cols[6],NULL,NULL);
+    $this->_assertStringyColumn($cols[7],NULL,NULL);
+    $this->_assertStringyColumn($cols[8],'b', NULL);
+  }
+
+  protected function _assertStringyColumn(Model\AbstractColumn $column, ?string $expected_encoding, ?string $expected_collation): void
+  {
+    $match=$column instanceof Model\CharColumn || $column instanceof Model\LOBColumn && $column->type==Model\LOBColumn::TYPE_TEXT;
+    $this->assertTrue($match,'column should be LOBColumn with TYPE_TEXT or CharColumn');
+
+    $prefix='column '.$column->name.': ';
+    $this->assertSame($expected_encoding,$column->encoding,$prefix.'encoding');
+    $this->assertSame($expected_collation,$column->collation,$prefix.'collation');
+  }
+
+
   protected function _assertIsIndex($obj, string $name, bool $unique, array $column_names, array $column_subparts)
   {
     $this->assertInstanceOf(Model\Index::class,$obj);

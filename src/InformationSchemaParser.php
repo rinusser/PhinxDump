@@ -220,6 +220,23 @@ abstract class InformationSchemaParser
     $table->engine=$engine;
     $table->collation=$table_data['table_collation'];
     $table->comment=$table_data['table_comment'];
+    self::_removeRedundancies($table);
     return $table;
+  }
+
+  private static function _removeRedundancies(Model\Table &$table): void
+  {
+    if(!$table->collation)
+      return;
+    $table_encoding=explode('_',$table->collation)[0];
+    foreach($table->columns as $column)
+    {
+      if(!$column instanceof Model\LOBColumn && !$column instanceof Model\CharColumn)
+        continue;
+      if($column->encoding===$table_encoding)
+        $column->encoding=NULL;
+      if($column->collation===$table->collation)
+        $column->collation=NULL;
+    }
   }
 }
