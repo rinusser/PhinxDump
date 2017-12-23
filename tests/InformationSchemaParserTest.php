@@ -307,19 +307,22 @@ class InformationSchemaParserTest extends TestCase
   public function testTemporals()
   {
     $data=[];
-    //                              name, def,                null, type,       len, prec,scal,type,       extra
-    $data[]=$this->_assembleDataRow('d',  NULL,               false,'date',     NULL,NULL,NULL,'date',     NULL);
-    $data[]=$this->_assembleDataRow('t',  NULL,               true, 'time',     NULL,NULL,NULL,'time',     NULL);
-    $data[]=$this->_assembleDataRow('dt', 'CURRENT_TIMESTAMP',false,'datetime', NULL,NULL,NULL,'datetime', NULL);
-    $data[]=$this->_assembleDataRow('ts1',NULL,               true, 'timestamp',NULL,NULL,NULL,'timestamp',NULL);
-    $data[]=$this->_assembleDataRow('ts2','CURRENT_TIMESTAMP',true, 'timestamp',NULL,NULL,NULL,'timestamp',NULL);
-    $data[]=$this->_assembleDataRow('ts3','CURRENT_TIMESTAMP',false,'timestamp',NULL,NULL,NULL,'timestamp',NULL);
-    $data[]=$this->_assembleDataRow('ts4',NULL,               true, 'timestamp',NULL,NULL,NULL,'timestamp','on update CURRENT_TIMESTAMP');
-    $data[]=$this->_assembleDataRow('ts5','CURRENT_TIMESTAMP',true, 'timestamp',NULL,NULL,NULL,'timestamp','on update CURRENT_TIMESTAMP');
-    $data[]=$this->_assembleDataRow('ts6','CURRENT_TIMESTAMP',false,'timestamp',NULL,NULL,NULL,'timestamp','on update CURRENT_TIMESTAMP');
+    //                              name, def,                  null, type,       len, prec,scal,type,       extra
+    $data[]=$this->_assembleDataRow('d',  NULL,                 false,'date',     NULL,NULL,NULL,'date',     NULL);
+    $data[]=$this->_assembleDataRow('t',  NULL,                 true, 'time',     NULL,NULL,NULL,'time',     NULL);
+    $data[]=$this->_assembleDataRow('dt', 'CURRENT_TIMESTAMP',  false,'datetime', NULL,NULL,NULL,'datetime', NULL);
+    $data[]=$this->_assembleDataRow('ts1',NULL,                 true, 'timestamp',NULL,NULL,NULL,'timestamp',NULL);
+    $data[]=$this->_assembleDataRow('ts2','CURRENT_TIMESTAMP',  true, 'timestamp',NULL,NULL,NULL,'timestamp',NULL);
+    $data[]=$this->_assembleDataRow('ts3','CURRENT_TIMESTAMP',  false,'timestamp',NULL,NULL,NULL,'timestamp',NULL);
+    $data[]=$this->_assembleDataRow('ts4',NULL,                 true, 'timestamp',NULL,NULL,NULL,'timestamp','on update CURRENT_TIMESTAMP');
+    $data[]=$this->_assembleDataRow('ts5','CURRENT_TIMESTAMP',  true, 'timestamp',NULL,NULL,NULL,'timestamp','on update CURRENT_TIMESTAMP');
+    $data[]=$this->_assembleDataRow('ts6','CURRENT_TIMESTAMP',  false,'timestamp',NULL,NULL,NULL,'timestamp','on update CURRENT_TIMESTAMP');
+    $data[]=$this->_assembleDataRow('z1', '0000-00-00 00:00:00',false,'timestamp',NULL,NULL,NULL,'timestamp',NULL);
+    $data[]=$this->_assembleDataRow('z2', '0000-00-00 00:00:00',false,'datetime', NULL,NULL,NULL,'datetime', NULL);
+    $data[]=$this->_assembleDataRow('z3', '0000-00-00',         false,'date',     NULL,NULL,NULL,'date',     NULL);
 
     $table=$this->_parse('temporals',$data);
-    $this->_assertIsTable($table,'temporals',9);
+    $this->_assertIsTable($table,'temporals',12);
     $cols=$table->columns;
 
     //                             obj,     name, default,            null, type,       onupdt
@@ -332,6 +335,9 @@ class InformationSchemaParserTest extends TestCase
     $this->_assertIsTemporalColumn($cols[6],'ts4',NULL,               true, 'timestamp',true);
     $this->_assertIsTemporalColumn($cols[7],'ts5','CURRENT_TIMESTAMP',true, 'timestamp',true);
     $this->_assertIsTemporalColumn($cols[8],'ts6','CURRENT_TIMESTAMP',false,'timestamp',true);
+    $this->_assertIsTemporalColumn($cols[9], 'z1',NULL,               false,'timestamp',false);
+    $this->_assertIsTemporalColumn($cols[10],'z2',NULL,               false,'datetime', false);
+    $this->_assertIsTemporalColumn($cols[11],'z3',NULL,               false,'date',     false);
   }
 
 

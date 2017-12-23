@@ -154,6 +154,12 @@ abstract class InformationSchemaParser
     $temporal_type=self::_findTemporalType($data);
     if($temporal_type!==NULL)
     {
+      if($default!==NULL && substr($default,0,10)=='0000-00-00')
+      {
+        if($temporal_type==Model\TemporalColumn::TYPE_TIMESTAMP && !$nullable)
+          Logger::getInstance()->warn('found TIMESTAMP NOT NULL column with invalid default, changed default to CURRENT_TIMESTAMP');
+        $default=NULL;
+      }
       $on_update_current_timestamp=!empty($data['extra'])?stripos(strtolower($data['extra']),'on update current_timestamp')!==false:false;
       return new Model\TemporalColumn($name,$default,$nullable,$temporal_type,$on_update_current_timestamp);
     }
